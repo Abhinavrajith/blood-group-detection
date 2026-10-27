@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Group Detection · Fingerprint</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        /* ---------- CSS Variables ---------- */
+        :root {
+            --bg: #f0f4f8;
+            --card-bg: rgba(255, 255, 255, 0.75);
+            --card-border: rgba(255, 255, 255, 0.5);
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 16px;
+            --shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ---------- Reset & Base ---------- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.06) 0%, transparent 40%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 16px;
+            line-height: 1.5;
+        }
+
+        /* ---------- Header ---------- */
+        .page-header {
+            text-align: center;
+            margin-bottom: 32px;
+            max-width: 600px;
+        }
+
+        .page-header .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 999px;
+            margin-bottom: 16px;
+        }
+
+        .page-header h1 {
+            font-size: clamp(1.75rem, 5vw, 2.5rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* ---------- Card / Glassmorphism ---------- */
+        .card {
+            width: 100%;
+            max-width: 640px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 32px;
+            transition: box-shadow var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card + .card {
+            margin-top: 24px;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2 svg {
+            width: 22px;
+            height: 22px;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .card .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        /* ---------- Form ---------- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .form-group label .required {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            color: var(--text);
+            background: #fff;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            outline: none;
+            transition: border-color var(--transition), box-shadow var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        }
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+
+        .form-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6.5L8 10l3.5-3.5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            cursor: pointer;
+        }
+
+        /* ---------- File Upload ---------- */
+        .upload-zone {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 36px 20px;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: border-color var(--transition), background var(--transition);
+            text-align: center;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.04);
+        }
+
+        .upload-zone svg {
+            width: 40px;
+            height: 40px;
+            color: var(--primary);
+            opacity: 0.7;
+        }
+
+        .upload-zone .upload-text {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .upload-zone .upload-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* ---------- Preview ---------- */
+        .preview-container {
+            display: none;
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .preview-container.active {
+            display: block;
+        }
+
+        .preview-container img {
+            max-width: 180px;
+            max-height: 180px;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .preview-container .remove-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #ef4444;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background var(--transition);
+        }
+
+        .preview-container .remove-btn:hover {
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        /* ---------- Button ---------- */
+        .btn-primary {
+            grid-column: 1 / -1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: #fff;
+            background: var(--primary);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background var(--transition), transform 0.1s, box-shadow var(--transition);
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn-primary .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        .btn-primary.loading .spinner {
+            display: inline-block;
+        }
+
+        .btn-primary.loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ---------- Result ---------- */
+        .result-section {
+            display: none;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .result-header .icon-circle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #dcfce7;
+            color: #16a34a;
+            flex-shrink: 0;
+        }
+
+        .result-header .icon-circle svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .result-header .result-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        .result-header .result-sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 16px;
+        }
+
+        .result-item .label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .result-item .value {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text);
+            word-break: break-word;
+        }
+
+        .result-item .value.highlight {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .result-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .result-item img {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-top: 4px;
+        }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 520px) {
+            .card {
+                padding: 24px 18px;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ---------- Toast / Error ---------- */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1e293b;
+            color: #fff;
+            font-size: 0.9rem;
+            padding: 12px 24px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 1000;
+            pointer-events: none;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.error {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="page-header">
+        <div class="badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+            Non‑Invasive · AI‑Powered
+        </div>
+        <h1>Blood Group Detection</h1>
+        <p>Upload a fingerprint image to predict your blood group instantly.</p>
+    </header>
+
+    <!-- ===== FORM CARD ===== -->
+    <div class="card" id="formCard">
+        <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Patient Details
+        </h2>
+        <p class="subtitle">All fields are required for accurate detection.</p>
+
+        <form id="bloodGroupForm" class="form-grid" novalidate>
+            <!-- Name -->
+            <div class="form-group">
+                <label for="name">Full Name <span class="required">*</span></label>
+                <input type="text" id="name" name="name" placeholder="e.g. Priya Sharma" autocomplete="name" required>
+            </div>
+
+            <!-- Mobile -->
+            <div class="form-group">
+                <label for="mobile">Mobile Number <span class="required">*</span></label>
+                <input type="tel" id="mobile" name="mobile" placeholder="10‑digit number" pattern="[0-9]{10}" autocomplete="tel" required>
+            </div>
+
+            <!-- Gender -->
+            <div class="form-group">
+                <label for="gender">Gender <span class="required">*</span></label>
+                <select id="gender" name="gender" required>
+                    <option value="" disabled selected>Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <!-- Age -->
+            <div class="form-group">
+                <label for="age">Age <span class="required">*</span></label>
+                <select id="age" name="age" required>
+                    <option value="" disabled selected>Select age</option>
+                </select>
+            </div>
+
+            <!-- Fingerprint Upload -->
+            <div class="form-group full-width">
+                <label>Fingerprint Image <span class="required">*</span></label>
+                <div class="upload-zone" id="uploadZone">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <div class="upload-text">Click to upload or drag & drop</div>
+                    <div class="upload-hint">PNG, JPG, BMP · Max 5 MB</div>
+                    <input type="file" id="fingerprint" name="fingerprint" accept="image/*" required>
+                </div>
+                <div class="preview-container" id="previewContainer">
+                    <img id="fingerprintPreview" alt="Fingerprint preview">
+                    <button type="button" class="remove-btn" id="removeFile">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Remove
+                    </button>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn-primary" id="submitBtn">
+                <span class="spinner"></span>
+                <span class="btn-text">Detect Blood Group</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- ===== RESULT CARD ===== -->
+    <div class="card result-section" id="resultSection">
+        <div class="result-header">
+            <div class="icon-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+                <div class="result-title">Detection Complete</div>
+                <div class="result-sub">Here are your results</div>
+            </div>
+        </div>
+
+        <div class="result-grid" id="resultGrid">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- ===== TOAST ===== -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ===== JAVASCRIPT ===== -->
+    <script>
+        (function () {
+            'use strict';
+
+            /* ---------- DOM Refs ---------- */
+            const form            = document.getElementById('bloodGroupForm');
+            const ageSelect       = document.getElementById('age');
+            const uploadZone      = document.getElementById('uploadZone');
+            const fileInput       = document.getElementById('fingerprint');
+            const previewContainer= document.getElementById('previewContainer');
+            const previewImg      = document.getElementById('fingerprintPreview');
+            const removeBtn       = document.getElementById('removeFile');
+            const submitBtn       = document.getElementById('submitBtn');
+            const resultSection   = document.getElementById('resultSection');
+            const resultGrid      = document.getElementById('resultGrid');
+            const toast           = document.getElementById('toast');
+
+            /* ---------- Populate Age Select (1‑100) ---------- */
+            for (let i = 1; i <= 100; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = i;
+                ageSelect.appendChild(opt);
+            }
+
+            /* ---------- Toast Helper ---------- */
+            let toastTimer;
+            function showToast(msg, isError = false) {
+                clearTimeout(toastTimer);
+                toast.textContent = msg;
+                toast.classList.toggle('error', isError);
+                toast.classList.add('show');
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+            }
+
+            /* ---------- File Preview ---------- */
+            function showPreview(file) {
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    previewContainer.classList.add('active');
+                    uploadZone.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function clearPreview() {
+                fileInput.value = '';
+                previewImg.src = '';
+                previewContainer.classList.remove('active');
+                uploadZone.style.display = 'flex';
+            }
+
+            /* ---------- File Input Change ---------- */
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('File size must be under 5 MB.', true);
+                    fileInput.value = '';
+                    return;
+                }
+                showPreview(file);
+            });
+
+            /* ---------- Drag & Drop ---------- */
+            ['dragenter', 'dragover'].forEach(evt => {
+                uploadZone.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadZone.classList.add('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(evt => {
+                uploadZone.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    uploadZone.classList.remove('dragover');
+                });
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                const file = e.dataTransfer.files[0];
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    showToast('Only image files are allowed.', true);
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('File size must be under 5 MB.', true);
+                    return;
+                }
+                fileInput.files = e.dataTransfer.files;
+                showPreview(file);
+            });
+
+            /* ---------- Remove File ---------- */
+            removeBtn.addEventListener('click', clearPreview);
+
+            /* ---------- Form Submit ---------- */
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Basic validation
+                const name  = document.getElementById('name').value.trim();
+                const mobile= document.getElementById('mobile').value.trim();
+                const gender= document.getElementById('gender').value;
+                const age   = document.getElementById('age').value;
+                const file  = fileInput.files[0];
+
+                if (!name || !mobile || !gender || !age || !file) {
+                    showToast('Please fill in all fields and upload a fingerprint.', true);
+                    return;
+                }
+
+                if (!/^[0-9]{10}$/.test(mobile)) {
+                    showToast('Please enter a valid 10‑digit mobile number.', true);
+                    return;
+                }
+
+                /* ----- Loading State ----- */
+                submitBtn.disabled = true;
+                submitBtn.classList.add('loading');
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server responded with ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    /* ----- Build Result Grid ----- */
+                    resultGrid.innerHTML = `
+                        <div class="result-item">
+                            <div class="label">Name</div>
+                            <div class="value">${escapeHtml(name)}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="label">Mobile</div>
+                            <div class="value">${escapeHtml(mobile)}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="label">Gender</div>
+                            <div class="value">${escapeHtml(gender)}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="label">Age</div>
+                            <div class="value">${escapeHtml(age)}</div>
+                        </div>
+                        <div class="result-item full-width">
+                            <div class="label">Fingerprint</div>
+                            <div class="value"><img src="${previewImg.src}" alt="Fingerprint"></div>
+                        </div>
+                        <div class="result-item">
+                            <div class="label">Blood Group</div>
+                            <div class="value highlight">${escapeHtml(data.predicted_label || '—')}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="label">Confidence</div>
+                            <div class="value">${escapeHtml(data.confidence || '—')}</div>
+                        </div>
+                    `;
+
+                    resultSection.classList.add('active');
+
+                    // Smooth scroll to result
+                    resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                } catch (err) {
+                    console.error('Prediction error:', err);
+                    showToast('Something went wrong. Please try again.', true);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('loading');
+                }
+            });
+
+            /* ---------- Utility: Escape HTML ---------- */
+            function escapeHtml(str) {
+                if (str === null || str === undefined) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+        })();
+    </script>
+</body>
+</html>
